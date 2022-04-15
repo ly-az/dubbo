@@ -24,8 +24,12 @@
     <!-- provider's application name, used for tracing dependency relationship -->
     <dubbo:application name="demo-provider"/>
 
+    <!-- 在 dubbo-demo 中使用的是 Multicast  作为注册中心 -->
     <!-- use multicast registry center to export service -->
-    <dubbo:registry address="multicast://224.5.6.7:1234"/>
+    <!--<dubbo:registry address="multicast://224.5.6.7:1234"/>-->
+    <!-- 实际生产中，一般都是使用 Zookeeper 作为注册中心 -->
+    <!-- 配置 zookeeper -->
+    <dubbo:registry address="zookeeper://113.31.118.68:2181"/>
 
     <!-- use dubbo protocol to export service on port 20880 -->
     <dubbo:protocol name="dubbo" port="20880"/>

@@ -25,8 +25,12 @@
     don't set it same as provider -->
     <dubbo:application name="demo-consumer"/>
 
+    <!-- 在 dubbo-demo 中使用的是 Multicast  作为注册中心 -->
     <!-- use multicast registry center to discover service -->
-    <dubbo:registry address="multicast://224.5.6.7:1234"/>
+    <!--<dubbo:registry address="multicast://224.5.6.7:1234"/>-->
+    <!-- 实际生产中，一般都是使用 Zookeeper 作为注册中心 -->
+    <!--配置 Zookeeper-->
+    <dubbo:registry address="zookeeper://113.31.118.68:2181"/>
 
     <!-- generate proxy for the remote service, then demoService can be used in the same way as the
     local regular interface -->
