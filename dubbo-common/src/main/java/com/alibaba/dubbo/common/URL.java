@@ -70,22 +70,53 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class URL implements Serializable {
 
+    /*
+    所有的配置最都将转换为 Dubbo URL 表示，并由服务提供方生成，经过注册中心传递给消费方
+    各配置类的属性对应 URL 中的参数
+
+    一个 Service 注册到注册中心的格式如下：
+    dubbo://192.168.3.17:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&default.delay=-1&default.retries=0&default.service.filter=demoFilter&delay=-1&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=19031&side=provider&timestamp=1519651641799
+    这个格式的字符串通过 URL#buildString() 方法生成
+     */
+
     private static final long serialVersionUID = -1985165475234910535L;
 
+    /**
+     * URL 协议
+     */
     private final String protocol;
 
+    /**
+     * 用户名
+     */
     private final String username;
 
+    /**
+     * 密码
+     */
     private final String password;
 
+    /**
+     * 注册主机地址
+     */
     // by default, host to registry
     private final String host;
 
+    /**
+     * 注册端口
+     */
     // by default, port to registry
     private final int port;
 
+    /**
+     * 路径，即服务名
+     */
     private final String path;
 
+    /**
+     * 配置参数集合
+     * 是通过 AbstractConfig#appendParameters() 方法获取的
+     */
     private final Map<String, String> parameters;
 
     // ==== cache ====
@@ -1161,6 +1192,9 @@ public final class URL implements Serializable {
         return buildString(appendUser, appendParameter, false, false, parameters);
     }
 
+    /**
+     * 构造 URL 的字符串标准格式
+     */
     private String buildString(boolean appendUser, boolean appendParameter, boolean useIP, boolean useService, String... parameters) {
         StringBuilder buf = new StringBuilder();
         if (protocol != null && protocol.length() > 0) {

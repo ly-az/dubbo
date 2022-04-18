@@ -24,22 +24,62 @@ import java.lang.annotation.Target;
 
 /**
  * Parameter
+ * 该注解用于 Dubbo URL 的 parameters 的拼接
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
 public @interface Parameter {
 
+    /**
+     * key
+     */
     String key() default "";
 
+    /**
+     * 是否必须
+     */
     boolean required() default false;
 
+    /**
+     * 是否忽略
+     */
     boolean excluded() default false;
 
+    /**
+     * 是否转义
+     */
     boolean escaped() default false;
 
+    /**
+     *是否为属性
+     *
+     * 目前用于 事件通知
+     */
     boolean attribute() default false;
 
+    /**
+     * 是否拼接默认属性，参见 com.alibaba.dubbo.config.AbstractConfig.appendParameters() 方法
+     *
+     * 被 Parameter 注解且 append() = true 的属性，有如下四个：
+     *   + AbstractInterfaceConfig#getFilter()
+     *   + AbstractInterfaceConfig#getListener()
+     *   + AbstractReferenceConfig#getFilter()
+     *   + AbstractReferenceConfig#getListener()
+     *   + AbstractServiceConfig#getFilter()
+     *   + AbstractServiceConfig#getListener()
+     * 以 AbstractServiceConfig 举例
+     *
+     *  ProviderConfig 和 ServiceConfig 继承 AbstractServiceConfig 类，那么 filter , listener 对应的相同的键
+     *
+     * 下面以 filter 举例
+     *
+     * 在 ServiceConfig 中，默认会继承 ProviderConfig 配置的 filter 和 listener
+     * 所以这个属性，就是用于，像 ServiceConfig 的这种情况，从 ProviderConfig 读取父属性。
+     *
+     * 举个例子，如果 ProviderConfig.filter=aaaFilter ，ServiceConfig.filter=bbbFilter
+     *          最终暴露到 Dubbo URL 时，参数为 service.filter=aaaFilter,bbbFilter
+     */
     boolean append() default false;
 
 }
