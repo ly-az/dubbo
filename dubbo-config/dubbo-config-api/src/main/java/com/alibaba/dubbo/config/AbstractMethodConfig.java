@@ -26,6 +26,9 @@ import java.util.Map;
  * AbstractMethodConfig
  *
  * @export
+ *
+ * 抽象方法配置类
+ *
  */
 public abstract class AbstractMethodConfig extends AbstractConfig {
 
