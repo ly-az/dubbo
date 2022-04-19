@@ -67,6 +67,8 @@ import static com.alibaba.dubbo.common.utils.NetUtils.isInvalidPort;
  * ServiceConfig
  *
  * @export
+ *
+ * 服务提供者暴露服务配置类
  */
 public class ServiceConfig<T> extends AbstractServiceConfig {
 
@@ -78,11 +80,31 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
 
+    /**
+     * 延迟服务暴露执行器
+     */
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
+    /**
+     * 服务配置对应的 Dubbo URL 数组
+     * 非配置
+     */
     private final List<URL> urls = new ArrayList<URL>();
+    /**
+     * 服务配置暴露的执行器
+     * URL : Exporter 不一定是 1:1 的关系
+     * 例如，URL 中的 parameters 中的 scope 值的设置就有影响
+     *      scope 未设置时，会暴露 Local + Remote 两个，也就是 URL:Exporter = 1:2
+     *      scope 设置为空时，不会暴露，URL:Exporter = 1:0
+     *      scope 设置为 Local 或者 Remote 时，会暴露设置的 Local 或者 Remote而，此时 URL:Exporter = 1:1
+     * 非配置
+     */
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
     // interface type
     private String interfaceName;
+    /**
+     * 对应的接口类型
+     * 非配置
+     */
     private Class<?> interfaceClass;
     // reference to interface impl
     private T ref;
@@ -91,10 +113,22 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     // method configuration
     private List<MethodConfig> methods;
     private ProviderConfig provider;
+    /**
+     * 是否暴露服务
+     * 非配置
+     */
     private transient volatile boolean exported;
 
+    /**
+     * 是否允许暴露服务
+     * 非配置
+     */
     private transient volatile boolean unexported;
 
+    /**
+     * 是否泛化实现
+     * 状态字段，非配置
+     */
     private volatile String generic;
 
     public ServiceConfig() {
@@ -194,7 +228,15 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return unexported;
     }
 
+    /**
+     * 暴露服务，主要做一下几件事情：
+     *  1. 进一步初始化 ServiceConfig
+     *  2. 校验 ServiceConfig 对象的配置
+     *  3. 通过 ServiceConfig 对象，生成 Dubbo URL 对象数组
+     *  4. 通过 URL 对象，暴露服务 todo，这一步后续继续探讨
+     */
     public synchronized void export() {
+        // 当 export 或者 delay 未配置，从 ProviderConfig 对象读取
         if (provider != null) {
             if (export == null) {
                 export = provider.getExport();
@@ -203,10 +245,12 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 delay = provider.getDelay();
             }
         }
+        // 不暴露服务( export = false ) ，则不执行暴露服务逻辑
         if (export != null && !export) {
             return;
         }
 
+        // 存在延迟配置，延迟暴露服务
         if (delay != null && delay > 0) {
             delayExportExecutor.schedule(new Runnable() {
                 @Override
@@ -215,22 +259,28 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 }
             }, delay, TimeUnit.MILLISECONDS);
         } else {
+            // 立即暴露服务
             doExport();
         }
     }
 
     protected synchronized void doExport() {
+        // 检查是否可以暴露服务
         if (unexported) {
             throw new IllegalStateException("Already unexported!");
         }
         if (exported) {
             return;
         }
+        // 如果可以，标记为已暴露
         exported = true;
+        // 校验接口名不为空
         if (interfaceName == null || interfaceName.length() == 0) {
             throw new IllegalStateException("<dubbo:service interface=\"\" /> interface not allow null!");
         }
+        // 拼接属性配置（环境变量 + properties 属性）到 ProviderConfig 对象，最终调用的是 appendProperties() 方法
         checkDefault();
+        // 从 ProviderConfig 对象中读取 application、module、registries、monitor、protocols 配置对象
         if (provider != null) {
             if (application == null) {
                 application = provider.getApplication();
@@ -248,6 +298,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 protocols = provider.getProtocols();
             }
         }
+        // 从 ModuleConfig 对象中读取 registries、monitor 配置对象
         if (module != null) {
             if (registries == null) {
                 registries = module.getRegistries();
@@ -256,6 +307,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 monitor = module.getMonitor();
             }
         }
+        // 从 ApplicationConfig 对象中，读取 registries、monitor 配置对象
         if (application != null) {
             if (registries == null) {
                 registries = application.getRegistries();
@@ -265,18 +317,22 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             }
         }
         if (ref instanceof GenericService) {
+            // 泛化接口的实现
             interfaceClass = GenericService.class;
             if (StringUtils.isEmpty(generic)) {
                 generic = Boolean.TRUE.toString();
             }
         } else {
+            // 普通接口的实现
             try {
                 interfaceClass = Class.forName(interfaceName, true, Thread.currentThread()
                         .getContextClassLoader());
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
+            // 校验接口和方法
             checkInterfaceAndMethods(interfaceClass, methods);
+            // 校验指向的 Service 对象 ，必须不为空是指定接口的实现
             checkRef();
             generic = Boolean.FALSE.toString();
         }
@@ -323,6 +379,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         ApplicationModel.initProviderModel(getUniqueServiceName(), providerModel);
     }
 
+    /**
+     * 校验指向的 Service 对象：
+     *  1. 非空
+     *  2. 是指定接口的实现
+     */
     private void checkRef() {
         // reference should not be null, and is the implementation of the given interface
         if (ref == null) {
