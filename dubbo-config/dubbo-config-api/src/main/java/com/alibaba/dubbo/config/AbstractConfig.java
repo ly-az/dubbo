@@ -63,7 +63,16 @@ public abstract class AbstractConfig implements Serializable {
     private static final Pattern PATTERN_NAME_HAS_SYMBOL = Pattern.compile("[:*,\\s/\\-._0-9a-zA-Z]+");
 
     private static final Pattern PATTERN_KEY = Pattern.compile("[*,\\-._0-9a-zA-Z]+");
+    /**
+     * 新老版本的 properties 的 key 映射
+     * key 新版本的配置映射
+     * value 旧版本的配置映射
+     */
     private static final Map<String, String> legacyProperties = new HashMap<String, String>();
+    /**
+     * 配置类名的后缀
+     * 例如，ServiceConfig 的后缀就是 Config，ServiceBean 的后缀就是 Bean
+     */
     private static final String[] SUFFIXES = new String[]{"Config", "Bean"};
 
     static {
@@ -91,6 +100,12 @@ public abstract class AbstractConfig implements Serializable {
      */
     protected String id;
 
+    /**
+     * 将键对应的值转换为对应的目标值
+     * @param key 键
+     * @param value 值
+     * @return 转换之后的值
+     */
     private static String convertLegacyValue(String key, String value) {
         if (value != null && value.length() > 0) {
             if ("dubbo.service.max.retry.providers".equals(key)) {
@@ -103,6 +118,15 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     /**
+     * 如果公共配置比较简单：没有多注册中心，多协议的情况下
+     * 或者想要在多个 Spring 容器下共享配置，可以使用 dubbo.properties 作为缺省配置
+     *
+     * Dubbo在启动时自动加载 classpath 目录下的 dubbo.properties 配置
+     * 可以通过 JVM 启动参数 `-Ddubbo.properties.files=xxx.properties 来修改改路径
+     *
+     * 属性配置是不支持多注册中心的，也不支持多协议
+     * 外部化配置支持多注册中心、多协议
+     *
      * 读取环境变量和 properties 配置到配置对象
      * @param config 配置对象
      */
@@ -110,16 +134,24 @@ public abstract class AbstractConfig implements Serializable {
         if (config == null) {
             return;
         }
+        //  获取配置的前缀
         String prefix = "dubbo." + getTagName(config.getClass()) + ".";
+        // 获取配置类的所有方法，通过反射获取配置类的属性名，再通过属性名读取【启动参数变量】和【 properties 配置】并设置到配置对象中
         Method[] methods = config.getClass().getMethods();
         for (Method method : methods) {
             try {
                 String name = method.getName();
+                // public 级别的、且唯一参数为基本数据类型的 set 方法
+                // 唯一参数为基本类型，决定了一个配置对象无法设置另外已鞥配置对象数组为属性，也就是没有多注册中心、多协议等情况
+                // 例如：ServiceConfig 无法通过属性配置设置多个 ProtocolConfig 对象
                 if (name.length() > 3 && name.startsWith("set") && Modifier.isPublic(method.getModifiers())
                         && method.getParameterTypes().length == 1 && isPrimitive(method.getParameterTypes()[0])) {
+                    // 获取属性名，例如 ApplicationConfig#setName() 获取的属性变量就是 name
                     String property = StringUtils.camelToSplitName(name.substring(3, 4).toLowerCase() + name.substring(4), ".");
 
+                    // 获取【启动参数变量】，优先从带有 Config#id 的配置中获取，例如： 例如：`dubbo.application.demo-provider.name`
                     String value = null;
+                    // 带有 `Config#id`
                     if (config.getId() != null && config.getId().length() > 0) {
                         String pn = prefix + config.getId() + "." + property;
                         value = System.getProperty(pn);
@@ -127,6 +159,8 @@ public abstract class AbstractConfig implements Serializable {
                             logger.info("Use System Property " + pn + " to config dubbo");
                         }
                     }
+                    // 【启动参数变量】获取不到，其次从不带有 `Config#id` 的配置中获取，例如：`dubbo.application.name`
+                    // 不带有 `Config#id`
                     if (value == null || value.length() == 0) {
                         String pn = prefix + property;
                         value = System.getProperty(pn);
@@ -134,6 +168,8 @@ public abstract class AbstractConfig implements Serializable {
                             logger.info("Use System Property " + pn + " to config dubbo");
                         }
                     }
+                    // 覆盖优先级为：启动参数变量（通过 -D 指定） > XML 配置 > properties 配置，因此需要使用 getter 判断 XML 是否已经设置
+                    // properties 配置通常相当于缺省值，常用于公共的配置
                     if (value == null || value.length() == 0) {
                         Method getter;
                         try {
@@ -146,13 +182,18 @@ public abstract class AbstractConfig implements Serializable {
                             }
                         }
                         if (getter != null) {
+                            // 通过 getter 判断 是否已经配置了 XML
+                            // 这是由于 XML 配置 的优先级高于 properties，调用getter 方法获取到配置，说明已经通过 XML 设置了配置值
                             if (getter.invoke(config) == null) {
+                                // 获取【 properties 配置】，优先从带有 Config#id 的配置中获取，例如 dubbo.application.demo-provider.name
                                 if (config.getId() != null && config.getId().length() > 0) {
                                     value = ConfigUtils.getProperty(prefix + config.getId() + "." + property);
                                 }
+                                // 【 properties 配置】获取不到，则其次从不带有 Config#id 的配置中获取，例如 dubbo.application.name
                                 if (value == null || value.length() == 0) {
                                     value = ConfigUtils.getProperty(prefix + property);
                                 }
+                                // 【 properties 配置】获取，兼容旧版本配置，最后从不带有 Config#id 的配置中获取，例如 dubbo.protocol.name
                                 if (value == null || value.length() == 0) {
                                     String legacyKey = legacyProperties.get(prefix + property);
                                     if (legacyKey != null && legacyKey.length() > 0) {
@@ -163,6 +204,7 @@ public abstract class AbstractConfig implements Serializable {
                             }
                         }
                     }
+                    // 获取到值后，通过反射进行设置
                     if (value != null && value.length() > 0) {
                         method.invoke(config, convertPrimitive(method.getParameterTypes()[0], value));
                     }
@@ -173,6 +215,11 @@ public abstract class AbstractConfig implements Serializable {
         }
     }
 
+    /**
+     * 获取类名对应的属性标签，例如，ServiceConfig 对应为 service
+     * @param cls 类型
+     * @return 属性标签
+     */
     private static String getTagName(Class<?> cls) {
         String tag = cls.getSimpleName();
         for (String suffix : SUFFIXES) {
@@ -341,6 +388,12 @@ public abstract class AbstractConfig implements Serializable {
                 || type == Object.class;
     }
 
+    /**
+     * 通过反射进行配置值设置
+     * @param type 类型
+     * @param value 配置值
+     * @return 配置好的属性值值对象
+     */
     private static Object convertPrimitive(Class<?> type, String value) {
         if (type == char.class || type == Character.class) {
             return value.length() > 0 ? value.charAt(0) : '\0';
