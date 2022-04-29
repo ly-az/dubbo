@@ -33,6 +33,11 @@ import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
  * DubboNamespaceHandler
  *
  * @export
+ *
+ * DubboNamespaceHandler 实现了 NamespaceHandlerSupport
+ * Dubbo XML namespace 处理器
+ *
+ *
  */
 public class DubboNamespaceHandler extends NamespaceHandlerSupport {
 
@@ -40,6 +45,9 @@ public class DubboNamespaceHandler extends NamespaceHandlerSupport {
         Version.checkDuplicate(DubboNamespaceHandler.class);
     }
 
+    /**
+     * 定义了每个 <xsd:element /> 标签对应的 BeanDefinitionParser
+     */
     @Override
     public void init() {
         registerBeanDefinitionParser("application", new DubboBeanDefinitionParser(ApplicationConfig.class, true));
@@ -49,9 +57,15 @@ public class DubboNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("provider", new DubboBeanDefinitionParser(ProviderConfig.class, true));
         registerBeanDefinitionParser("consumer", new DubboBeanDefinitionParser(ConsumerConfig.class, true));
         registerBeanDefinitionParser("protocol", new DubboBeanDefinitionParser(ProtocolConfig.class, true));
+        // 这里的 service 标签使用的是 ServiceBean 而不是 ServiceConfig
         registerBeanDefinitionParser("service", new DubboBeanDefinitionParser(ServiceBean.class, true));
+        // 这里的 reference 标签也是使用的是 ReferenceBean
+        /*
+        无论是 ServiceConfig 还是 ReferenceBean
+        在加载完具体的配置后，都是需要调用其对应的初始化方法完成配置的， todo
+         */
         registerBeanDefinitionParser("reference", new DubboBeanDefinitionParser(ReferenceBean.class, false));
-        registerBeanDefinitionParser("annotation", new AnnotationBeanDefinitionParser());
+        registerBeanDefinitionParser("annotation", new AnnotationBeanDefinitionParser()); // 废弃
     }
 
 }
