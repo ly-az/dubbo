@@ -143,7 +143,9 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 }
             }
             // 处理 <dubbo:service /> 的 class 属性配置
-
+            // <dubbo:class = "" /> 该标签在大多数情况下都是不建议使用的，官方文档也没有对应的解释说明
+            // 配置了 class 属性，会直接自动创建 ServiceBean，而不需要使用 ref 配置指向对应的 ServiceBean
+            // TODO: 2022-04-29 暂时到这里，提交
         } else if (ServiceBean.class.equals(beanClass)) {
             // 解析 class 的值
             String className = element.getAttribute("class");
