@@ -61,6 +61,9 @@ import java.lang.annotation.Target;
  * @see DubboConfigConfiguration
  * @see DubboConfigConfigurationRegistrar
  * @since 2.5.8
+ *
+ * 开启 dubbo 配置
+ *
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
@@ -77,6 +80,9 @@ public @interface EnableDubboConfig {
      *
      * @return the default value is <code>true</code> since 2.6.6, the value is inverse earlier.
      * @revised 2.5.9
+     *
+     * 配置是否绑定到多个 Spring Bean 上
+     *
      */
     boolean multiple() default true;
 

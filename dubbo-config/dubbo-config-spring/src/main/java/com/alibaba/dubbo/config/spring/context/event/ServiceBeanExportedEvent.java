@@ -28,6 +28,9 @@ import org.springframework.context.ApplicationListener;
  * @see ApplicationListener
  * @see ServiceBean
  * @since 2.6.5
+ *
+ * Service Bean 暴露完成事件
+ *
  */
 public class ServiceBeanExportedEvent extends ApplicationEvent {
 

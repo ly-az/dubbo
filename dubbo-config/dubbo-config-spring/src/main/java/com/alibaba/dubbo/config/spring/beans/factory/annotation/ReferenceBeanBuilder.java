@@ -42,6 +42,10 @@ import static org.springframework.util.StringUtils.commaDelimitedListToStringArr
  * {@link ReferenceBean} Builder
  *
  * @since 2.5.7
+ *
+ * 继承 AbstractAnnotationConfigBeanBuilder 抽象类，ReferenceBean 的构建器
+ * 主要实现 AbstractAnnotationConfigBeanBuilder 定义的抽象方法
+ *
  */
 class ReferenceBeanBuilder extends AbstractAnnotationConfigBeanBuilder<Reference, ReferenceBean> {
 
@@ -49,11 +53,13 @@ class ReferenceBeanBuilder extends AbstractAnnotationConfigBeanBuilder<Reference
     static final String[] IGNORE_FIELD_NAMES = of("application", "module", "consumer", "monitor", "registry");
 
     private ReferenceBeanBuilder(Reference annotation, ClassLoader classLoader, ApplicationContext applicationContext) {
+        // 创建 ReferenceBean 对象
         super(annotation, classLoader, applicationContext);
     }
 
     private void configureInterface(Reference reference, ReferenceBean referenceBean) {
 
+        // 首先，从 @Reference 获得 interfaceName 属性，从而获得 interfaceClass 类
         Class<?> interfaceClass = reference.interfaceClass();
 
         if (void.class.equals(interfaceClass)) {
@@ -62,6 +68,7 @@ class ReferenceBeanBuilder extends AbstractAnnotationConfigBeanBuilder<Reference
 
             String interfaceClassName = reference.interfaceName();
 
+            // 如果获得不到，则使用 interfaceClass 即可
             if (StringUtils.hasText(interfaceClassName)) {
                 if (ClassUtils.isPresent(interfaceClassName, classLoader)) {
                     interfaceClass = ClassUtils.resolveClassName(interfaceClassName, classLoader);
@@ -84,10 +91,12 @@ class ReferenceBeanBuilder extends AbstractAnnotationConfigBeanBuilder<Reference
 
     private void configureConsumerConfig(Reference reference, ReferenceBean<?> referenceBean) {
 
+        // 获得 ConsumerConfig 对象
         String consumerBeanName = reference.consumer();
 
         ConsumerConfig consumerConfig = getOptionalBean(applicationContext, consumerBeanName, ConsumerConfig.class);
 
+        // 设置到 referenceBean 中
         referenceBean.setConsumer(consumerConfig);
 
     }
@@ -108,8 +117,10 @@ class ReferenceBeanBuilder extends AbstractAnnotationConfigBeanBuilder<Reference
     @Override
     protected void preConfigureBean(Reference reference, ReferenceBean referenceBean) {
         Assert.notNull(interfaceClass, "The interface class must set first!");
+        // 创建 DataBinder 对象
         DataBinder dataBinder = new DataBinder(referenceBean);
         // Register CustomEditors for special fields
+        // 注册指定属性的自定义 Editor
         dataBinder.registerCustomEditor(String.class, "filter", new StringTrimmerEditor(true));
         dataBinder.registerCustomEditor(String.class, "listener", new StringTrimmerEditor(true));
         dataBinder.registerCustomEditor(Map.class, "parameters", new PropertyEditorSupport() {
@@ -131,6 +142,7 @@ class ReferenceBeanBuilder extends AbstractAnnotationConfigBeanBuilder<Reference
         });
 
         // Bind annotation attributes
+        // 将注解的属性，设置到 reference 中
         dataBinder.bind(new AnnotationPropertyValuesAdapter(reference, applicationContext.getEnvironment(), IGNORE_FIELD_NAMES));
 
     }
@@ -159,14 +171,19 @@ class ReferenceBeanBuilder extends AbstractAnnotationConfigBeanBuilder<Reference
     @Override
     protected void postConfigureBean(Reference annotation, ReferenceBean bean) throws Exception {
 
+        // 设置 applicationContext
         bean.setApplicationContext(applicationContext);
 
+        // 配置 interfaceClass
         configureInterface(annotation, bean);
 
+        // 配置 ConsumerConfig
         configureConsumerConfig(annotation, bean);
 
+        // 配置 MethodConfig
         configureMethodConfig(annotation, bean);
 
+        // 执行 Bean 后置属性初始化
         bean.afterPropertiesSet();
 
     }

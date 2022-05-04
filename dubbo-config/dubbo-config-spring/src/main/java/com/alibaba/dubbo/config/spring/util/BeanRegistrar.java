@@ -37,7 +37,7 @@ public abstract class BeanRegistrar {
     public static void registerInfrastructureBean(BeanDefinitionRegistry beanDefinitionRegistry,
                                                   String beanName,
                                                   Class<?> beanType) {
-
+        // 不存在 beanName 对应的 BeanDefinition 对象
         if (!beanDefinitionRegistry.containsBeanDefinition(beanName)) {
             RootBeanDefinition beanDefinition = new RootBeanDefinition(beanType);
             beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);

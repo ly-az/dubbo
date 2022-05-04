@@ -55,6 +55,9 @@ public @interface EnableDubboConfigBinding {
      * The name prefix of the properties that are valid to bind to {@link AbstractConfig Dubbo Config}.
      *
      * @return the name prefix of the properties to bind
+     *
+     * 配置前缀
+     *
      */
     String prefix();
 
@@ -64,6 +67,9 @@ public @interface EnableDubboConfigBinding {
      * @see ApplicationConfig
      * @see ModuleConfig
      * @see RegistryConfig
+     *
+     * 配置类型
+     *
      */
     Class<? extends AbstractConfig> type();
 
@@ -71,6 +77,8 @@ public @interface EnableDubboConfigBinding {
      * It indicates whether {@link #prefix()} binding to multiple Spring Beans.
      *
      * @return the default value is <code>false</code>
+     *
+     * 是否为 multiple
      */
     boolean multiple() default false;
 

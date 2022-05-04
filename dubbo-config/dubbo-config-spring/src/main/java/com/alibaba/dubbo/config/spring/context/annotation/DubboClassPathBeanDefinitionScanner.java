@@ -33,6 +33,9 @@ import static org.springframework.context.annotation.AnnotationConfigUtils.regis
  * @see #doScan(String...)
  * @see #registerDefaultFilters()
  * @since 2.5.7
+ *
+ * 用于扫描指定包下符合条件的类，用于将每个符合条件的类，创建对应的 BeanDefinition 对象，从而创建 Bean
+ *
  */
 public class DubboClassPathBeanDefinitionScanner extends ClassPathBeanDefinitionScanner {
 

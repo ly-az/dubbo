@@ -41,8 +41,18 @@ import org.springframework.context.annotation.Configuration;
  * @see ProviderConfig
  * @see ConsumerConfig
  * @since 2.5.8
+ *
+ * Dubbo AbstractConfig 配置类
  */
 public class DubboConfigConfiguration {
+
+
+    /*
+    Single 和 Multiple 内部类。其上都有 @@EnableDubboConfigBindings 和 @EnableDubboConfigBinding 注解。
+    前者 Single ，其上的注解，prefix 都是单数。
+    后者 Multiple ，其上的注解，prefix 都是复数，且有 multiple = true 。
+     */
+
 
     /**
      * Single Dubbo {@link AbstractConfig Config} Bean Binding

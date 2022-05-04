@@ -30,11 +30,14 @@ import java.lang.annotation.Target;
  *
  * @since 2.5.8
  * @see EnableDubboConfigBinding
+ *
+ * // @EnableDubboConfigBinding 注解的数组
+ *
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import(DubboConfigBindingsRegistrar.class)
+@Import(DubboConfigBindingsRegistrar.class) // 表明使用 DubboConfigBindingsRegistrar 类进行导入
 public @interface EnableDubboConfigBindings {
 
     /**

@@ -42,14 +42,24 @@ abstract class AbstractAnnotationConfigBeanBuilder<A extends Annotation, B exten
 
     protected final Log logger = LogFactory.getLog(getClass());
 
+    /**
+     * 注解
+     * 泛型 A 对应 @Reference 注解，泛型 B 对应 ReferenceBean 类
+     */
     protected final A annotation;
 
     protected final ApplicationContext applicationContext;
 
     protected final ClassLoader classLoader;
 
+    /**
+     * bean 对象
+     */
     protected Object bean;
 
+    /**
+     * 接口
+     */
     protected Class<?> interfaceClass;
 
     protected AbstractAnnotationConfigBeanBuilder(A annotation, ClassLoader classLoader,
@@ -68,13 +78,19 @@ abstract class AbstractAnnotationConfigBeanBuilder<A extends Annotation, B exten
      *
      * @return non-null
      * @throws Exception
+     *
+     * ，构造泛型 B 对象。此处，就是构造 ReferenceBean 对象
+     *
      */
     public final B build() throws Exception {
 
+        // 校验依赖
         checkDependencies();
 
+        // 执行构造 Bean 对象
         B bean = doBuild();
 
+        // 配置 Bean 对象
         configureBean(bean);
 
         if (logger.isInfoEnabled()) {
@@ -99,16 +115,22 @@ abstract class AbstractAnnotationConfigBeanBuilder<A extends Annotation, B exten
 
     protected void configureBean(B bean) throws Exception {
 
+        // 前置配置
         preConfigureBean(annotation, bean);
 
+        // 配置 RegistryConfig 属性
         configureRegistryConfigs(bean);
 
+        // 配置 MonitorConfig 属性
         configureMonitorConfig(bean);
 
+        // 配置 ApplicationConfig 属性
         configureApplicationConfig(bean);
 
+        // 配置 ModuleConfig 属性
         configureModuleConfig(bean);
 
+        // 后置配置
         postConfigureBean(annotation, bean);
 
     }
