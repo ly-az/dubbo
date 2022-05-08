@@ -22,6 +22,17 @@ package com.alibaba.dubbo.rpc;
  * @see com.alibaba.dubbo.rpc.Protocol#export(Invoker)
  * @see com.alibaba.dubbo.rpc.ExporterListener
  * @see com.alibaba.dubbo.rpc.protocol.AbstractExporter
+ *
+ * Dubbo 处理服务暴露的关键就在于 Invoker 转换到 Exporter 的过程
+ *  Dubbo 的实现，dubbo 协议的 Invoker 转为 Exporter 发生在 DubboProtocol 类的 export() 方法
+ *  主要是打开 socket 侦听服务，并接收客户端发来的各种请求，通讯细节由 Dubbo 实现
+ *
+ *  RMI 的实现，RMI 协议的 Invoker 转为 Exporter 发生在 RmiProtocol 类的 export() 方法
+ *  通过 Spring 或者 Dubbo 或者 JDK 来实现 RMI 服务，通讯细节这部分由 JDK 底层来实现
+ *
+ *  Exporter，Invoker 暴露服务在 Protocol 上的对象
+ *
+ *
  */
 public interface Exporter<T> {
 
@@ -29,6 +40,9 @@ public interface Exporter<T> {
      * get invoker.
      *
      * @return invoker
+     *
+     * 获取对应的 Invoker 对象
+     *
      */
     Invoker<T> getInvoker();
 
@@ -38,6 +52,8 @@ public interface Exporter<T> {
      * <code>
      * getInvoker().destroy();
      * </code>
+     *
+     * 取消暴露，通过实现该方法，使相同的 Invoker 在不同的 Protocol 实现取消暴露逻辑
      */
     void unexport();
 

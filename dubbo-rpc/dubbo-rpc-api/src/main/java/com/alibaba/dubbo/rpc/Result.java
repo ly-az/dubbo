@@ -24,6 +24,9 @@ import java.util.Map;
  * @serial Don't change the class name and package name.
  * @see com.alibaba.dubbo.rpc.Invoker#invoke(Invocation)
  * @see com.alibaba.dubbo.rpc.RpcResult
+ *
+ * Result 会话域，持有调用过程中的返回值，异常等
+ *
  */
 public interface Result {
 
@@ -31,6 +34,9 @@ public interface Result {
      * Get invoke result.
      *
      * @return result. if no result return null.
+     *
+     * 获取返回值
+     *
      */
     Object getValue();
 
@@ -38,6 +44,9 @@ public interface Result {
      * Get exception.
      *
      * @return exception. if no exception return null.
+     *
+     * 获取异常
+     *
      */
     Throwable getException();
 
@@ -45,6 +54,9 @@ public interface Result {
      * Has exception.
      *
      * @return has exception.
+     *
+     * 是否有异常
+     *
      */
     boolean hasException();
 
@@ -71,6 +83,7 @@ public interface Result {
     @Deprecated
     Object getResult();
 
+    /* 获取隐式参数相关 */
 
     /**
      * get attachments.

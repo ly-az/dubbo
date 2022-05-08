@@ -24,6 +24,9 @@ import java.util.Map;
  * @serial Don't change the class name and package name.
  * @see com.alibaba.dubbo.rpc.Invoker#invoke(Invocation)
  * @see com.alibaba.dubbo.rpc.RpcInvocation
+ *
+ * Invocation 是会话域，持有调用过程中的变量，比如方法名、参数等
+ *
  */
 public interface Invocation {
 
@@ -32,6 +35,8 @@ public interface Invocation {
      *
      * @return method name.
      * @serial
+     *
+     * 获取方法名
      */
     String getMethodName();
 
@@ -40,6 +45,8 @@ public interface Invocation {
      *
      * @return parameter types.
      * @serial
+     *
+     * 获取方法参数类型的数组
      */
     Class<?>[] getParameterTypes();
 
@@ -48,8 +55,12 @@ public interface Invocation {
      *
      * @return arguments.
      * @serial
+     *
+     * 获取方法参数
      */
     Object[] getArguments();
+
+    /* 获取隐式参数的相关方法（隐式参数和 Http Request 的 Header 类似） */
 
     /**
      * get attachments.
@@ -80,6 +91,9 @@ public interface Invocation {
      *
      * @return invoker.
      * @transient
+     *
+     * 获取对应的 invoker 对象
+     *
      */
     Invoker<?> getInvoker();
 

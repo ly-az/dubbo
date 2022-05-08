@@ -20,6 +20,10 @@ import com.alibaba.dubbo.common.extension.SPI;
 
 /**
  * Filter. (SPI, Singleton, ThreadSafe)
+ *
+ * 过滤器的定义接口
+ * 和 javax.servlet.Filter 基本一致
+ *
  */
 @SPI
 public interface Filter {

@@ -23,6 +23,7 @@ import com.alibaba.dubbo.common.extension.SPI;
 
 /**
  * ProxyFactory. (API/SPI, Singleton, ThreadSafe)
+ * 代理工厂接口
  */
 @SPI("javassist")
 public interface ProxyFactory {
@@ -32,6 +33,9 @@ public interface ProxyFactory {
      *
      * @param invoker
      * @return proxy
+     *
+     * 创建 proxy，在应用服务调用
+     *
      */
     @Adaptive({Constants.PROXY_KEY})
     <T> T getProxy(Invoker<T> invoker) throws RpcException;
@@ -41,6 +45,7 @@ public interface ProxyFactory {
      *
      * @param invoker
      * @return proxy
+     * 创建 proxy，在暴露服务时调用
      */
     @Adaptive({Constants.PROXY_KEY})
     <T> T getProxy(Invoker<T> invoker, boolean generic) throws RpcException;
@@ -53,6 +58,7 @@ public interface ProxyFactory {
      * @param type
      * @param url
      * @return invoker
+     * 创建 invoker，在暴露服务时调用
      */
     @Adaptive({Constants.PROXY_KEY})
     <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) throws RpcException;

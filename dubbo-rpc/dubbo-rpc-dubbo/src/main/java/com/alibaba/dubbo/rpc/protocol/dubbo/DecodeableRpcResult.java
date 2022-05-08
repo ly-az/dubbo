@@ -40,6 +40,10 @@ import java.util.Map;
 import static com.alibaba.dubbo.common.Constants.SERIALIZATION_ID_KEY;
 import static com.alibaba.dubbo.common.Constants.SERIALIZATION_SECURITY_CHECK_KEY;
 
+/**
+ * dubbo 协议独占
+ * TODO: 5/8/2022 后续继续学习
+ */
 public class DecodeableRpcResult extends RpcResult implements Codec, Decodeable {
 
     private static final Logger log = LoggerFactory.getLogger(DecodeableRpcResult.class);
