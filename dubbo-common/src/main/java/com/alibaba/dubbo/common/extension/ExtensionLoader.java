@@ -55,6 +55,9 @@ import java.util.regex.Pattern;
  * @see com.alibaba.dubbo.common.extension.SPI
  * @see com.alibaba.dubbo.common.extension.Adaptive
  * @see com.alibaba.dubbo.common.extension.Activate
+ *
+ * SPI 扩展的加载器，这是 Dubbo SPI 机制的核心类
+ *
  */
 public class ExtensionLoader<T> {
 
@@ -68,12 +71,28 @@ public class ExtensionLoader<T> {
 
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
 
+    /**
+     * 扩展加载器的集合
+     * key 拓展接口
+     *
+     */
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
 
+    /**
+     * 拓展实现集合
+     * key 拓展实现类
+     * value 拓展实现类的对象
+     * 例如：key -> Class<AccessLogFilter>, value -> AccessLogFilter 对象
+     */
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
 
     // ==============================
 
+    /**
+     * 拓展接口
+     * 例如 Protocol
+     * todo 扩展相关源码阅读
+     */
     private final Class<?> type;
 
     private final ExtensionFactory objectFactory;
