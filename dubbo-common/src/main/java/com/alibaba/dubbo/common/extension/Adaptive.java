@@ -29,6 +29,13 @@ import java.lang.annotation.Target;
  *
  * @see ExtensionLoader
  * @see URL
+ *
+ * Adaptive 注解可是标注在类上，方法上
+ * <p>
+ * 一个拓展接口，有且仅有一个 Adaptive 拓展实现类
+ * <p>
+ * 如果标记在类上，代表手动实现，是一个拓展借口而 Adaptive 拓展实现类，dubbo 2.6.x 中只有 ExtensionFactory 拓展实现类 AdaptiveExtensionFactory
+ * 如果标记在拓展接口的方法上，代表自动自动生成代码来实现该接口的 Adaptive拓展实现类
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -54,6 +61,12 @@ public @interface Adaptive {
      * <code>String[] {"yyy.invoker.wrapper"}</code>. This name will be used to search for parameter from URL.
      *
      * @return parameter key names in URL
+     * <p>
+     * value ，从 Dubbo URL 获取参数中，使用键名( Key )，获取键值。该值为真正的拓展名
+     * <p>
+     * 自适应拓展实现类，会获取拓展名对应的真正的拓展对象。通过该对象，执行真正的逻辑
+     * 可以设置多个键名( Key )，顺序获取是直到有值。若最终获取不到，就使用默认拓展名。
+     *
      */
     String[] value() default {};
 
