@@ -74,8 +74,14 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     private static final long serialVersionUID = 3033787999037024738L;
 
+    /**
+     * 自适应 Protocol 实现对象
+     */
     private static final Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
 
+    /**
+     * 自适应的 ProxyFactory 实现
+     */
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
 
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
@@ -431,10 +437,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     /**
      * 暴露 Dubbo URL 对象
+     * <p>
+     * Dubbo 暴露服务有两种方式：1. 本地暴露，JVM本地调用；2. 远程暴露，网络远程通信
+     * 在没有指定配置 `scope` 的情况下，默认两种方式都进行暴露，这样做的原因是 Dubbo 自身无法确定应用中是否存在本地应用的情况
+     * 本地暴露该方式仅使用 Injvm 协议实现，具体代码在 dubbo-rpc-injvm 模块中
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
+        // 从注册中心加载需要暴露的 URL 数组
         List<URL> registryURLs = loadRegistries(true);
+        // 循环 `protocols` ，向逐个注册中心分组暴露服务
         for (ProtocolConfig protocolConfig : protocols) {
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
@@ -591,6 +603,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (!Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) {
 
             // export to local if the config is not remote (export to remote only when config is remote)
+            // 如果没有配置 scope 是远程，就暴露到本地 local
             if (!Constants.SCOPE_REMOTE.toString().equalsIgnoreCase(scope)) {
                 exportLocal(url);
             }
@@ -634,16 +647,38 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         this.urls.add(url);
     }
 
+    /**
+     *
+     * 本地暴露实现
+     * @param url 注册中心 URL
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void exportLocal(URL url) {
         if (!Constants.LOCAL_PROTOCOL.equalsIgnoreCase(url.getProtocol())) {
+            // 创建本地 Dubbo URL
+            // 基于原有的 URL ，创建新的服务的本地 Dubbo URL 对象
+            // 并设置属性 protocol=injvm/host=127.0.0.1/port=0
             URL local = URL.valueOf(url.toFullString())
-                    .setProtocol(Constants.LOCAL_PROTOCOL)
-                    .setHost(LOCALHOST)
-                    .setPort(0);
+                    .setProtocol(Constants.LOCAL_PROTOCOL)  // injvm
+                    .setHost(LOCALHOST)  // 本地 host
+                    .setPort(0);  // 端口 = 0
+            // 添加服务的真实类名，例如 DemoServiceImpl ，仅用于 RestProtocol 中
             StaticContext.getContext(Constants.SERVICE_IMPL_CLASS).put(url.getServiceKey(), getServiceClass(ref));
+            // 使用 proxyFactory 创建 invoke 对象
+            // 使用 protocol 暴露 invoke 对象
+            // Protocol#export()：此处 Dubbo SPI 自适应的特性的好处就出来了，可以自动根据 URL 参数，获得对应的拓展实现
+            // 例如：invoker 传入后，根据 invoker.url 自动获得对应 Protocol 拓展实现为 InjvmProtocol
+            /*
+            实际上，Protocol 有两个 Wrapper 拓展实现类：
+                ProtocolFilterWrapper
+                ProtocolListenerWrapper
+            所以，#export(...) 方法的调用顺序是：
+                Protocol$Adaptive => ProtocolFilterWrapper => ProtocolListenerWrapper => InjvmProtocol
+
+             */
             Exporter<?> exporter = protocol.export(
-                    proxyFactory.getInvoker(ref, (Class) interfaceClass, local));
+                    proxyFactory.getInvoker(ref, (Class<T>) interfaceClass, local));
+            // 添加到 exporter
             exporters.add(exporter);
             logger.info("Export dubbo service " + interfaceClass.getName() + " to local registry");
         }

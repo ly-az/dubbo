@@ -27,6 +27,15 @@ import java.util.Set;
 
 public class UrlUtils {
 
+    /**
+     * 解析单个 URL，将 `defaults` 里面的参数合并到`address` 中
+     * 合并的逻辑： 可以把 `address` 认为是 url；`defaults` 认为是 defaultURL
+     * 如果URL有不存在的属性时，从 defaultURL 获取到对应的属性并设置到 URL 中
+     *
+     * @param address 地址
+     * @param defaults 默认的参数集合
+     * @return 解析的 URL 对象
+     */
     public static URL parseURL(String address, Map<String, String> defaults) {
         if (address == null || address.length() == 0) {
             return null;
@@ -123,6 +132,7 @@ public class UrlUtils {
         }
         return u;
     }
+
 
     public static List<URL> parseURLs(String address, Map<String, String> defaults) {
         if (address == null || address.length() == 0) {
