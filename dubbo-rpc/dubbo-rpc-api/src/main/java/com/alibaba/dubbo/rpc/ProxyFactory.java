@@ -53,12 +53,11 @@ public interface ProxyFactory {
     /**
      * create invoker.
      *
-     * @param <T>
-     * @param proxy
-     * @param type
-     * @param url
+     * @param proxy 服务接口实现的引用
+     * @param type 对应的服务接口类型
+     * @param url Dubbo 创建 URL 对象
      * @return invoker
-     * 创建 invoker，在暴露服务时调用
+     * 创建 invoker，在暴露服务时调用此方法
      */
     @Adaptive({Constants.PROXY_KEY})
     <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) throws RpcException;

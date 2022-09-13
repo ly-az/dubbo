@@ -79,6 +79,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      */
     private static final Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
 
+    /**
+     * 自适应的 ProxyFactory 实现
+     */
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
 
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
@@ -600,6 +603,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (!Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) {
 
             // export to local if the config is not remote (export to remote only when config is remote)
+            // 如果没有配置 scope 是远程，就暴露到本地 local
             if (!Constants.SCOPE_REMOTE.toString().equalsIgnoreCase(scope)) {
                 exportLocal(url);
             }
@@ -656,7 +660,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             // 并设置属性 protocol=injvm/host=127.0.0.1/port=0
             URL local = URL.valueOf(url.toFullString())
                     .setProtocol(Constants.LOCAL_PROTOCOL)  // injvm
-                    .setHost(LOCALHOST)  // 本地
+                    .setHost(LOCALHOST)  // 本地 host
                     .setPort(0);  // 端口 = 0
             // 添加服务的真实类名，例如 DemoServiceImpl ，仅用于 RestProtocol 中
             StaticContext.getContext(Constants.SERVICE_IMPL_CLASS).put(url.getServiceKey(), getServiceClass(ref));
@@ -673,7 +677,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
              */
             Exporter<?> exporter = protocol.export(
-                    proxyFactory.getInvoker(ref, (Class) interfaceClass, local));
+                    proxyFactory.getInvoker(ref, (Class<T>) interfaceClass, local));
             // 添加到 exporter
             exporters.add(exporter);
             logger.info("Export dubbo service " + interfaceClass.getName() + " to local registry");

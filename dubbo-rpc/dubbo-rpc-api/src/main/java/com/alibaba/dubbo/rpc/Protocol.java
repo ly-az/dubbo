@@ -29,6 +29,7 @@ public interface Protocol {
 
     /**
      * Get default port when user doesn't config the port.
+     * 没有配置端口时，获取默认的端口
      *
      * @return default port
      */
@@ -46,7 +47,7 @@ public interface Protocol {
      * @param invoker Service invoker 服务的执行体
      * @return exporter reference for exported service, useful for unexport the service later 暴露服务的引用，用于取消暴露
      * @throws RpcException thrown when error occurs during export the service, for example: port is occupied 暴露服务出现的异常，比如端口占用
-     *
+     * <p>
      * 暴露远程服务：<br>
      * 1. 协议在接收请求是，应记录请求来源方地址信息：`RpcContext.getContext().setRemoteAddress();` <br>
      * 2. export() 必须是幂等的，也就是暴露同一个 URL 的 Invoker 两次，和暴露一次没有区别 <br>
@@ -70,9 +71,9 @@ public interface Protocol {
      * @param url  URL address for the remote service 远程服务的 URL 地址
      * @return invoker service's local proxy 服务的本地代理
      * @throws RpcException when there's any error while connecting to the service provider 连接服务提供方失败的异常
-     *
+     * <p>
      * 引用远程服务：<br>
-     * 1. 当用户调用 refer 所返回的 Invoker 对象的 invoke() 方法是，协议需要相应执行同 URL 远端 export() 传入的 Invoker 对象的 invoke() 方法。<br>
+     * 1. 当用户调用 refer 所返回的 Invoker 对象的 invoke() 方法时，协议需要相应执行同 URL 远端 export() 传入的 Invoker 对象的 invoke() 方法。<br>
      * 2. refer() 返回的 Invoker 由协议实现，协议通常需要在此 Invoker 中发送远程请求 <br>
      * 3. 当 URL 中有设置 check = false 时，连接失败不能抛出异常，并内部自动恢复
      */

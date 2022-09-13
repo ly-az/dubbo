@@ -31,6 +31,7 @@ import java.util.List;
 
 /**
  * ListenerProtocol
+ * Protocol 的 Wrapper 拓展实现，目的是为了给 Invoker 增加过滤链
  */
 public class ProtocolFilterWrapper implements Protocol {
 
@@ -43,11 +44,22 @@ public class ProtocolFilterWrapper implements Protocol {
         this.protocol = protocol;
     }
 
+    /**
+     * 创建带有过滤链的 Invoker 对象
+     * @param invoker invoker 对象
+     * @param key 获取 URL 参数的 Key， 该参数用于获得 ServiceConfig 或 ReferenceConfig 配置的自定义过滤器
+     * @param group 分组， 在暴露服务时，group = provider；在引用服务时，group = consumer
+     * @return 带有 过滤链的 Invoker 对象
+     * @param <T> 泛型
+     */
     private static <T> Invoker<T> buildInvokerChain(final Invoker<T> invoker, String key, String group) {
         Invoker<T> last = invoker;
+        // 获得过滤器集合
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
         if (!filters.isEmpty()) {
+            // 倒序遍历过滤器集合，创建带有过滤链的 Invoker 对象
             for (int i = filters.size() - 1; i >= 0; i--) {
+                // 因为是嵌套声明匿名类循环调用的方式，所以是倒序遍历，实际上过滤链的顺序还是正序的
                 final Filter filter = filters.get(i);
                 final Invoker<T> next = last;
                 last = new Invoker<T>() {
@@ -94,9 +106,12 @@ public class ProtocolFilterWrapper implements Protocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        // 注册中心
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
+            // 本地服务是不能通过这个 if 判断的，远程服务才可以
             return protocol.export(invoker);
         }
+        // 建立带有过滤链的 Invoker 并暴露服务
         return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
     }
 
