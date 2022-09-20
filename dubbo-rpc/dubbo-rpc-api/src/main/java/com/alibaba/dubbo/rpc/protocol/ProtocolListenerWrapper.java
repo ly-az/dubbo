@@ -53,13 +53,19 @@ public class ProtocolListenerWrapper implements Protocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
-        // 注册中心
+        // 注册中心，如果是本地暴露，是不符合这个判断的
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
             return protocol.export(invoker);
         }
-        return new ListenerExporterWrapper<T>(protocol.export(invoker),
+        // 返回一个带有 ExporterListener 集合的 Export 对象
+        return new ListenerExporterWrapper<T>(
+                // 暴露服务，创建 Exporter 对象
+                // 如果是本地暴露，实际上执行的是 InjvmProtocol#export() 方法，创建的也是 InjvmExport 对象
+                protocol.export(invoker),
+                // 获得 ExporterListener 集合
                 Collections.unmodifiableList(ExtensionLoader.getExtensionLoader(ExporterListener.class)
-                        .getActivateExtension(invoker.getUrl(), Constants.EXPORTER_LISTENER_KEY)));
+                        .getActivateExtension(invoker.getUrl(), Constants.EXPORTER_LISTENER_KEY))
+        );
     }
 
     @Override

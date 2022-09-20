@@ -26,13 +26,21 @@ import java.util.List;
 
 /**
  * ListenerExporter
+ * 实现 Exporter 接口，具有监听器功能的 Exporter 包装器
  */
 public class ListenerExporterWrapper<T> implements Exporter<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(ListenerExporterWrapper.class);
 
+    /**
+     * 真实的 Exporter 对象
+     *
+     */
     private final Exporter<T> exporter;
 
+    /**
+     * Exporter 的监听器集合
+     */
     private final List<ExporterListener> listeners;
 
     public ListenerExporterWrapper(Exporter<T> exporter, List<ExporterListener> listeners) {
@@ -41,9 +49,12 @@ public class ListenerExporterWrapper<T> implements Exporter<T> {
         }
         this.exporter = exporter;
         this.listeners = listeners;
+        // 如果监听器集合不为空，就执行监听器的逻辑
         if (listeners != null && !listeners.isEmpty()) {
             RuntimeException exception = null;
             for (ExporterListener listener : listeners) {
+                // 遍历监听器集合，执行 ExporterListener#exported(listener)，
+                // 如果执行过程中出现运行时异常，仍然继续执行，执行完之后才抛出
                 if (listener != null) {
                     try {
                         listener.exported(this);
@@ -69,9 +80,12 @@ public class ListenerExporterWrapper<T> implements Exporter<T> {
         try {
             exporter.unexport();
         } finally {
+            // 执行监听器
             if (listeners != null && !listeners.isEmpty()) {
                 RuntimeException exception = null;
                 for (ExporterListener listener : listeners) {
+                    // 遍历监听器集合，执行 ExporterListener#unexported(listener)，
+                    // 如果执行过程中出现异常，继续执行，直到执行完成之后才抛出
                     if (listener != null) {
                         try {
                             listener.unexported(this);
