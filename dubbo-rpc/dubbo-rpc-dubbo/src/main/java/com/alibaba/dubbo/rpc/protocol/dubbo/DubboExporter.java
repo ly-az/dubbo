@@ -24,19 +24,31 @@ import java.util.Map;
 
 /**
  * DubboExporter
+ * 实现 AbstractExporter 抽象类，Dubbo Exporter 的实现
  */
 public class DubboExporter<T> extends AbstractExporter<T> {
 
+    /**
+     * 服务的 key
+     */
     private final String key;
 
+    /**
+     * Exporter 集合
+     * key 就是服务的 key
+     * <p>
+     * 该属性值实际就是 {@link com.alibaba.dubbo.rpc.protocol.AbstractProtocol#exporterMap}
+     */
     private final Map<String, Exporter<?>> exporterMap;
 
+    // 构造方法，发起暴露，将自己添加到 exporterMap 中
     public DubboExporter(Invoker<T> invoker, String key, Map<String, Exporter<?>> exporterMap) {
         super(invoker);
         this.key = key;
         this.exporterMap = exporterMap;
     }
 
+    // 取消暴露，将自己移除出 exporterMap 中
     @Override
     public void unexport() {
         super.unexport();

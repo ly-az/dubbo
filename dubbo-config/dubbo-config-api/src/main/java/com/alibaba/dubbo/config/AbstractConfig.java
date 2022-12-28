@@ -120,13 +120,13 @@ public abstract class AbstractConfig implements Serializable {
     /**
      * 如果公共配置比较简单：没有多注册中心，多协议的情况下
      * 或者想要在多个 Spring 容器下共享配置，可以使用 dubbo.properties 作为缺省配置
-     *
+     * <p>
      * Dubbo在启动时自动加载 classpath 目录下的 dubbo.properties 配置
      * 可以通过 JVM 启动参数 `-Ddubbo.properties.files=xxx.properties 来修改改路径
-     *
+     * <p>
      * 属性配置是不支持多注册中心的，也不支持多协议
      * 外部化配置支持多注册中心、多协议
-     *
+     * <p>
      * 读取环境变量和 properties 配置到配置对象
      * @param config 配置对象
      */

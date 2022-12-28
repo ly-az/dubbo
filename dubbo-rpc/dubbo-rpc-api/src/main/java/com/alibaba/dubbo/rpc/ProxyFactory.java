@@ -55,7 +55,7 @@ public interface ProxyFactory {
      *
      * @param proxy 服务接口实现的引用
      * @param type 对应的服务接口类型
-     * @param url Dubbo 创建 URL 对象
+     * @param url Dubbo 创建的 URL 对象
      * @return invoker
      * 创建 invoker，在暴露服务时调用此方法
      */

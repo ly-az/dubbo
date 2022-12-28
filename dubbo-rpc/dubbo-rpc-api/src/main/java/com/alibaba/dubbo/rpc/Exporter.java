@@ -26,7 +26,7 @@ package com.alibaba.dubbo.rpc;
  * Dubbo 处理服务暴露的关键就在于 Invoker 转换到 Exporter 的过程
  *  Dubbo 的实现，dubbo 协议的 Invoker 转为 Exporter 发生在 DubboProtocol 类的 export() 方法
  *  主要是打开 socket 侦听服务，并接收客户端发来的各种请求，通讯细节由 Dubbo 实现
- *
+ * <p>
  *  RMI 的实现，RMI 协议的 Invoker 转为 Exporter 发生在 RmiProtocol 类的 export() 方法
  *  通过 Spring 或者 Dubbo 或者 JDK 来实现 RMI 服务，通讯细节这部分由 JDK 底层来实现
  *

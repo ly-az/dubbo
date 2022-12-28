@@ -104,14 +104,21 @@ public class ProtocolFilterWrapper implements Protocol {
         return protocol.getDefaultPort();
     }
 
+    /**
+     * Protocol 的 export 方法在 ProtocolFilterWrapper 类的实现
+     * @param invoker Service invoker 服务的执行体
+     * @return 带有过滤器的 Invoker 对象
+     * @param <T>
+     * @throws RpcException
+     */
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
-        // 注册中心
+        // 如果是注册中心的 URL , 则无需创建对应的 Filter 的过滤链
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
             // 本地服务是不能通过这个 if 判断的，远程服务才可以
             return protocol.export(invoker);
         }
-        // 建立带有过滤链的 Invoker 并暴露服务
+        // （BuildInvokerChain() ）建立带有过滤链的 Invoker 并暴露服务（ Protocol#export()）
         return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
     }
 

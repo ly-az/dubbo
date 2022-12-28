@@ -608,15 +608,23 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 exportLocal(url);
             }
             // export to remote if the config is not local (export to local only when config is local)
+            // 远程暴露
+            // 只有在配置了是本地暴露的时候才会暴露到本地，否者是远程和本地都暴露
             if (!Constants.SCOPE_LOCAL.toString().equalsIgnoreCase(scope)) {
                 if (logger.isInfoEnabled()) {
                     logger.info("Export dubbo service " + interfaceClass.getName() + " to url " + url);
                 }
                 if (registryURLs != null && !registryURLs.isEmpty()) {
                     for (URL registryURL : registryURLs) {
+                        // "dynamic" ：服务是否动态注册
+                        // 如果设为false，注册后将显示后disable状态，需人工启用，并且服务提供者停止时，也不会自动取消册，需人工禁用
                         url = url.addParameterIfAbsent(Constants.DYNAMIC_KEY, registryURL.getParameter(Constants.DYNAMIC_KEY));
+                        // 获取监控中心的 URL
                         URL monitorUrl = loadMonitor(registryURL);
                         if (monitorUrl != null) {
+                            // 如果获取的监控中心的 URL 不为空，就把监控中心的 URL 以 monitor 作为 key 添加到 服务提供者的 URL 上
+                            // 需要注意的是 添加监控中心的URL 是需要进行编码处理的
+                            // 这样处理之后，服务提供者的 URL 也带有监控中心的 URL，也就是说 服务提供者也有监控中心的配置
                             url = url.addParameterAndEncoded(Constants.MONITOR_KEY, monitorUrl.toFullString());
                         }
                         if (logger.isInfoEnabled()) {
@@ -624,14 +632,35 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         }
 
                         // For providers, this is used to enable custom proxy to generate invoker
+                        // 为服务提供者以自定义代理的模式生成 Invoker ，这里是把 proxy 添加到了注册中心的URL参数集合中
                         String proxy = url.getParameter(Constants.PROXY_KEY);
                         if (StringUtils.isNotEmpty(proxy)) {
                             registryURL = registryURL.addParameter(Constants.PROXY_KEY, proxy);
                         }
 
-                        Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
+                        // 通过 ProxyFactory 生成 Invoker，这里使用的是注册中心的 URL
+                        Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass,
+                                registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
+                        // 把 invoker 对象进行封装，这里封装之后的 Invoker 对象携带了 服务提供者的 ServiceConfig 对象的
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
+                        /*
+                        这就体现了 Dubbo SPI 的自适应性的优势，可以自动根据 URL 的参数，获取对应的拓展实现
+                        例如，invoker 传入之后，根据 invoker.url 可以获取对应的 protocol 参数 ，就可以获取默认的 DubboProtocol 拓展实现
 
+                        实际上，Protocol 有 ProtocolListenerWrapper 和 ProtocolFilterWrapper 两个 Wrapper 拓展实现
+                        所以执行 Protocol#export() 方法时， 执行的顺序是：
+                            Protocol$Adaptive => ProtocolFilterWrapper => ProtocolListenerWrapper => RegistryProtocol
+                            =>
+                            Protocol$Adaptive => ProtocolFilterWrapper => ProtocolListenerWrapper => DubboProtocol
+                        也就是说，这一一条大的调用链，包含了两条小的调用链
+                        这样处理的原因是，
+                            1. 传入的是注册中心的 URL，通过 Protocol#adaptive 获取的 RegisterProtocol 对象
+                            2. RegistryProtocol 会在 export 方法中，使用服务提供者的 URL（也就是注册中心的 URL 的 export 参数），
+                               然后再次调用 Protocol#adaptive 获取到的 DubboProtocol 对象来进行服务暴露
+
+                        这样做的目的是，通过这样的顺序，可以实现类似 AOP 的效果，在本地服务器启动完成后，再向注册中心注册，这也是为什么生成 Invoker 时传递是注册中心的 URL
+                         */
+                        // 服务提供者进行暴露
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }

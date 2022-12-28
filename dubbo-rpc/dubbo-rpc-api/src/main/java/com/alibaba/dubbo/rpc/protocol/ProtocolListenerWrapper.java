@@ -53,7 +53,8 @@ public class ProtocolListenerWrapper implements Protocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
-        // 注册中心，如果是本地暴露，是不符合这个判断的
+        // 判断是否是注册中心的 URL，如果是 则不需要创建对应的 Listener，这里的逻辑和 ProtocolFilterWrapper 方法重写的 export 方法的逻辑是一样的
+        // 如果是本地暴露，是不符合这个判断的，
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
             return protocol.export(invoker);
         }

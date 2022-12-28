@@ -233,14 +233,24 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         return registryList;
     }
 
+    /**
+     * 加载监控中心
+     * @param registryURL
+     * @return
+     */
     protected URL loadMonitor(URL registryURL) {
+        // 当监控中线不存在的时候
         if (monitor == null) {
+            // 从配置文件中获取的是监控中心的 ip 地址
             String monitorAddress = ConfigUtils.getProperty("dubbo.monitor.address");
+            // 从配置中获取监控中心的 协议
             String monitorProtocol = ConfigUtils.getProperty("dubbo.monitor.protocol");
+            // 未从配置中获取监控中心的地址和协议，无法创建监控中心的配置对象
             if ((monitorAddress == null || monitorAddress.length() == 0) && (monitorProtocol == null || monitorProtocol.length() == 0)) {
                 return null;
             }
 
+            // 创建监控中心的配置对象，并赋值属性
             monitor = new MonitorConfig();
             if (monitorAddress != null && monitorAddress.length() > 0) {
                 monitor.setAddress(monitorAddress);
@@ -249,16 +259,18 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                 monitor.setProtocol(monitorProtocol);
             }
         }
+        // 将根据读取的监控中心配置文件得到的数据创建的监控中心配置对象添加进来
         appendProperties(monitor);
         Map<String, String> map = new HashMap<String, String>();
+        // 接口名
         map.put(Constants.INTERFACE_KEY, MonitorService.class.getName());
-        map.put(Constants.SIDE_KEY, Constants.CONSUMER_SIDE);
-        map.put("dubbo", Version.getProtocolVersion());
-        map.put(Constants.TIMESTAMP_KEY, String.valueOf(System.currentTimeMillis()));
-        if (ConfigUtils.getPid() > 0) {
+        map.put(Constants.SIDE_KEY, Constants.CONSUMER_SIDE); // 设置 Side，消费者
+        map.put("dubbo", Version.getProtocolVersion()); // 设置协议版本
+        map.put(Constants.TIMESTAMP_KEY, String.valueOf(System.currentTimeMillis())); // 时间戳
+        if (ConfigUtils.getPid() > 0) { // pid 进程号
             map.put(Constants.PID_KEY, String.valueOf(ConfigUtils.getPid()));
         }
-        //set ip
+        //set ip 设置 ip
         String hostToRegistry = ConfigUtils.getSystemProperty(Constants.DUBBO_IP_TO_REGISTRY);
         if (hostToRegistry == null || hostToRegistry.length() == 0) {
             hostToRegistry = NetUtils.getLocalHost();
@@ -266,14 +278,18 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             throw new IllegalArgumentException("Specified invalid registry ip from property:" + Constants.DUBBO_IP_TO_REGISTRY + ", value:" + hostToRegistry);
         }
         map.put(Constants.REGISTER_IP_KEY, hostToRegistry);
+        // 将监控中心的配置对象添加到 URL 的参数集合中
         appendParameters(map, monitor);
+        // 将 Application 的配置对象添加到 URL 的参数集合中
         appendParameters(map, application);
         String address = monitor.getAddress();
         String sysaddress = System.getProperty("dubbo.monitor.address");
         if (sysaddress != null && sysaddress.length() > 0) {
             address = sysaddress;
         }
+        // 配置直连监控中心的 address
         if (ConfigUtils.isNotEmpty(address)) {
+            // 如果配置参数集合里面没有指定协议，就使用默认的 dubbo 协议
             if (!map.containsKey(Constants.PROTOCOL_KEY)) {
                 if (ExtensionLoader.getExtensionLoader(MonitorFactory.class).hasExtension("logstat")) {
                     map.put(Constants.PROTOCOL_KEY, "logstat");
@@ -281,8 +297,10 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                     map.put(Constants.PROTOCOL_KEY, "dubbo");
                 }
             }
+            // 解析参数集合为 URL并返回
             return UrlUtils.parseURL(address, map);
         } else if (Constants.REGISTRY_PROTOCOL.equals(monitor.getProtocol()) && registryURL != null) {
+            // 从注册中心发现监控中心
             return registryURL.setProtocol("dubbo").addParameter(Constants.PROTOCOL_KEY, "registry").addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map));
         }
         return null;
@@ -290,7 +308,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
 
     /**
      * 校验接口和方法：
-     *  1. 借口累非空，是接口
+     *  1. 接口类非空，说明是接口
      *  2. 方法在接口中已经定义
      * @param interfaceClass 接口类
      * @param methods 方法数组
