@@ -186,12 +186,6 @@ public class ExtensionLoader<T> {
 
     /**
      * @param type 拓展接口
-     *             <p>
-     *             这里判断了传入的拓展接口是否是 ExtensionFactory，这里的判断避免了死循环
-     *             如果当前的拓展类接口不是 ExtensionFactory ，获得 ExtensionFactory 拓展接口的自适应拓展实现对象
-     *             这里为什么会产生死循环？？
-     *             可以看看拓展工厂的具体实现：
-     * @see com.alibaba.dubbo.common.extension.ExtensionFactory
      */
     private ExtensionLoader(Class<?> type) {
         this.type = type;
