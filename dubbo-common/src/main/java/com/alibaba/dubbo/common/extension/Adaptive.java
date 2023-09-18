@@ -34,8 +34,9 @@ import java.lang.annotation.Target;
  * <p>
  * 一个拓展接口，有且仅有一个 Adaptive 拓展实现类
  * <p>
- * 如果标记在类上，代表手动实现，是一个拓展借口而 Adaptive 拓展实现类，dubbo 2.6.x 中只有 ExtensionFactory 拓展实现类 AdaptiveExtensionFactory
- * 如果标记在拓展接口的方法上，代表自动自动生成代码来实现该接口的 Adaptive拓展实现类
+ * 如果标记在类上，代表手动实现，是一个拓展接口,而 Adaptive 拓展实现类
+ * dubbo 2.6.x 中只有 ExtensionFactory 拓展实现类 AdaptiveExtensionFactory
+ * 如果标记在拓展接口的方法上，代表自动自动生成代码来实现该接口的 Adaptive 拓展实现类
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

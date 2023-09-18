@@ -18,7 +18,7 @@ package com.alibaba.dubbo.common.extension;
 
 /**
  * ExtensionFactory
- *
+ * <p>
  * 拓展工厂接口，其本身就是一个拓展，是通过 Dubbo 的 SPI实现加载具体的拓展实现
  */
 @SPI

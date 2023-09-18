@@ -69,7 +69,7 @@ public @interface Activate {
      * @see ExtensionLoader#getActivateExtension(URL, String)
      * @see ExtensionLoader#getActivateExtension(URL, String, String)
      *
-     * Key过滤条件。包含{@link ExtensionLoader#getActivateExtension}的URL的参数Key中有，则返回扩展
+     * Key过滤条件。包含{@link ExtensionLoader#getActivateExtension}的URL的参数Key中存在，则返回扩展
      *  <p/>
      * 示例：<br/>
      * 注解的值 <code>@Activate("cache,validatioin")</code>，

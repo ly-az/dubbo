@@ -57,6 +57,19 @@ import java.util.regex.Pattern;
  * @see com.alibaba.dubbo.common.extension.Activate
  * <p>
  * SPI 扩展的加载器，这是 Dubbo SPI 机制的核心类
+ * <p>
+ * <p>
+ * Dubbo使用的扩展点获取。<p>
+ * <ul>
+ *      <li>自动注入关联扩展点。</li>
+ *      <li>自动Wrap上扩展点的Wrap类。</li>
+ *      <li>缺省获得的的扩展点是一个Adaptive Instance。</li>
+ * </ul>
+ * <p>
+ * Dubbo SPI ：https://dubbo.gitbooks.io/dubbo-dev-book/SPI.html
+ * Java  SPI ：http://blog.csdn.net/top_code/article/details/51934459
+ * <p>
+ * 另外，该类同时是 ExtensionLoader 的管理容器，例如 {@link ExtensionLoader#EXTENSION_INSTANCES} 、{@link ExtensionLoader#EXTENSION_INSTANCES} 属性。
  */
 public class ExtensionLoader<T> {
 
@@ -92,6 +105,7 @@ public class ExtensionLoader<T> {
             缓存创建的拓展实现对象
      */
 
+    // ============================== 静态属性 ==============================
     /**
      * 扩展加载器的集合
      * key 拓展接口
@@ -99,7 +113,7 @@ public class ExtensionLoader<T> {
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
 
     /**
-     * 拓展实现集合
+     * 拓展实现类集合
      * key 拓展实现类
      * value 拓展实现类的对象
      * 例如：key -> Class<AccessLogFilter>, value -> AccessLogFilter 对象
@@ -107,7 +121,7 @@ public class ExtensionLoader<T> {
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
 
     // ==============================
-
+    // ============================== 对象属性 ==============================
     /**
      * 拓展接口
      * 例如 Protocol
@@ -116,20 +130,20 @@ public class ExtensionLoader<T> {
 
     /**
      * 对象工厂，其具体功能是 Spring IoC 一致
-     * 用于调用 {@link #injectExtension(Object)} 方法，向拓展对象注入依赖属性
+     * 调用 {@link #injectExtension(Object)} 方法，向拓展对象注入依赖属性
      * 例如，StubProxyFactoryWrapper 中有 `Protocol protocol` 属性
      */
     private final ExtensionFactory objectFactory;
 
     /**
-     * 缓存的拓展类与拓展名
+     * 缓存的拓展类-拓展名
      * {@see #cachedClasses}的 K-V 值对调
      * 通过 {@link #loadExtensionClasses} 加载
      */
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
 
     /**
-     * 缓存的拓展名与拓展类，但是不包含以下两种类型：
+     * 缓存的拓展名-拓展类，但是不包含以下两种类型：
      * 1. 自适应的拓展实现，例如 AdaptiveExtensionFactory
      * 2. 带唯一参数为拓展接口的构造方法实现类，或者说是拓展 Wrapper 实现类，例如：ProtocolFilterWrapper
      * 拓展 Wrapper 实现类，会添加到 {@link #cachedWrapperClasses} 中
@@ -196,15 +210,15 @@ public class ExtensionLoader<T> {
      * 是否有 SPI 注解
      *
      * @param type 扩展类型
-     * @param <T>
-     * @return
+     * @param <T>  泛型
+     * @return 是否包含，true-包含，false-不包含
      */
     private static <T> boolean withExtensionAnnotation(Class<T> type) {
         return type.isAnnotationPresent(SPI.class);
     }
 
     /**
-     * 获取扩展加载器
+     * 根据拓展点的接口，获得拓展加载器
      *
      * @param type 扩展类型
      * @param <T>  泛型
@@ -273,15 +287,17 @@ public class ExtensionLoader<T> {
 
     /**
      * This is equivalent to {@code getActivateExtension(url, url.getParameter(key).split(","), null)}
+     * 获得符合自动激活条件的拓展对象数组
      *
      * @param url   url
      * @param key   url parameter key which used to get extension point names
-     * @param group group
+     *              Dubbo URL 中的参数名
+     * @param group group 过滤的分组
      * @return extension list which are activated.
      * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String[], String)
      */
     public List<T> getActivateExtension(URL url, String key, String group) {
-        // 从 URL 中获取 key 对应的 value
+        // 从 Dubbo URL 中获取 key 对应的 value
         String value = url.getParameter(key);
         // 获取符合自动激活条件的拓展集合
         return getActivateExtension(url, value == null || value.length() == 0 ? null : Constants.COMMA_SPLIT_PATTERN.split(value), group);
@@ -296,7 +312,7 @@ public class ExtensionLoader<T> {
      * @return extension list which are activated
      * @see com.alibaba.dubbo.common.extension.Activate
      * <p>
-     * 获取符合条件的自动激活的拓展集合
+     * 获得符合自动激活条件的拓展对象集合
      */
     public List<T> getActivateExtension(URL url, String[] values, String group) {
         List<T> exts = new ArrayList<T>();
@@ -309,7 +325,7 @@ public class ExtensionLoader<T> {
                 String name = entry.getKey();
                 Activate activate = entry.getValue();
                 // 获取符合条件的拓展实现
-                if (isMatchGroup(group, activate.group())) {
+                if (isMatchGroup(group, activate.group())) { // 匹配分组
                     if (!names.contains(name) //  不包含在自定义配置里。如果包含，会在下面的代码处理
                             && !names.contains(Constants.REMOVE_VALUE_PREFIX + name) // 判断是否配置移除。例如 <dubbo:service filter="-monitor" />，则 MonitorFilter 会被移除
                             && isActive(activate, url)) { // 判断是否激活
@@ -318,6 +334,7 @@ public class ExtensionLoader<T> {
                     }
                 }
             }
+            // 排序
             Collections.sort(exts, ActivateComparator.COMPARATOR);
         }
         // 处理自定义配置的拓展。例如 <dubbo:service filter="demo" /> ，代表需要加入 DemoFilter
@@ -456,7 +473,7 @@ public class ExtensionLoader<T> {
             holder = cachedInstances.get(name);
         }
         Object instance = holder.get();
-        if (instance == null) {
+        if (instance == null) { // 经典的双检锁
             synchronized (holder) {
                 instance = holder.get();
                 // 如果缓存中没有对应的拓展对象，就创建并加入到缓存中
@@ -717,10 +734,10 @@ public class ExtensionLoader<T> {
     }
 
     /**
-     * 向拓展实现类的实体中注入各种属性
+     * 向拓展实现类的实例中注入各种属性
      *
-     * @param instance 拓展实现类实体
-     * @return
+     * @param instance 拓展实现类实例对象
+     * @return 拓展对象
      */
     private T injectExtension(T instance) {
         try {
@@ -766,6 +783,7 @@ public class ExtensionLoader<T> {
             throw new IllegalArgumentException("Extension type == null");
         if (name == null)
             throw new IllegalArgumentException("Extension name == null");
+        // 获得拓展实现类
         Class<?> clazz = getExtensionClasses().get(name);
         if (clazz == null)
             throw new IllegalStateException("No such extension \"" + name + "\" for " + type.getName() + "!");
@@ -870,7 +888,7 @@ public class ExtensionLoader<T> {
             try {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    // 过滤注释
+                    // 过滤注释, 例如 #spring = xxxxx
                     final int ci = line.indexOf('#');
                     if (ci >= 0) line = line.substring(0, ci);
                     line = line.trim();
@@ -1244,7 +1262,10 @@ public class ExtensionLoader<T> {
                         type.getName(), Arrays.toString(value));
                 code.append(s);
                 // 生成代码：拓展对象，调用方法。例如
-                // `com.alibaba.dubbo.rpc.ProxyFactory extension = (com.alibaba.dubbo.rpc.ProxyFactory) ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.rpc.ProxyFactory.class).getextension(extname);`
+                /*
+                `com.alibaba.dubbo.rpc.ProxyFactory extension =
+                     (com.alibaba.dubbo.rpc.ProxyFactory) ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.rpc.ProxyFactory.class).getextension(extname);`
+                 */
                 s = String.format("\n%s extension = (%<s)%s.getExtensionLoader(%s.class).getExtension(extName);",
                         type.getName(), ExtensionLoader.class.getSimpleName(), type.getName());
                 code.append(s);
