@@ -60,12 +60,23 @@ public class EagerThreadPoolExecutor extends ThreadPoolExecutor {
         if (command == null) {
             throw new NullPointerException();
         }
+
+        //调用线程池的原始execute，配合自定义的TaskQueue，实现如果corePoolSize满了，offer到taskQueue返回false，强制创建线程
+
         // do not increment in method beforeExecute!
         submittedTaskCount.incrementAndGet();
         try {
             super.execute(command);
         } catch (RejectedExecutionException rx) {
             // retry to offer the task into queue.
+
+            //这里要再次尝试retryOffer，再次尝试把任务插入到任务队列里，是考虑到 TaskQueue 带来的副作用。
+            /*
+            结合 ThreadPoolExecutor.execute看:
+            当 corePoolSize 不够的时候，workQueue 实际上就是 Dubbo 的 TaskQueue，它的 offer 方法会返回 false，导致线程池会尝试创建新的线程。
+            强制创建线程后，但是一旦达到了 maxPoolSize，addWorker 创建是失败，会进入到 reject 流程，而实际上这个还是还是不是向走 reject 流程的。但是 Dubbo 的 TaskQueue 强制返回了 false，还没有真正插入到队列里面处理
+            所以上面捕获了 RejectedExecutionException，再次尝试把任务插入到任务队列里，知道 TaskQueue.retryOffer 真的放不进任务队列了，才走 reject 流程。
+            */
             final TaskQueue queue = (TaskQueue) super.getQueue();
             try {
                 if (!queue.retryOffer(command, 0, TimeUnit.MILLISECONDS)) {

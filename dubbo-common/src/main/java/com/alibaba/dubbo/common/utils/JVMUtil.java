@@ -23,9 +23,13 @@ import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
+/**
+ * 该工具类目前仅有 JStack 的功能
+ */
 public class JVMUtil {
     public static void jstack(OutputStream stream) throws Exception {
         ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+        // 循环每个线程
         for (ThreadInfo threadInfo : threadMxBean.dumpAllThreads(true, true)) {
             stream.write(getThreadDumpString(threadInfo).getBytes());
         }

@@ -38,13 +38,16 @@ import java.util.concurrent.ThreadPoolExecutor;
  * <p>
  * 实现了 java.util.concurrent.ThreadPoolExecutor.AbortPolicy ，拒绝策略实现类
  * <p>
- * 可以打印 JStack ，分析线程状态
+ * 线程池的拒绝策略，打印告警日志，分析线程状态
  *
  */
 public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbortPolicyWithReport.class);
 
+    /**
+     * 线程名
+     */
     private final String threadName;
 
     /**
@@ -79,9 +82,13 @@ public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
         logger.warn(msg);
         // JStack 日志，分析线程
         dumpJStack();
+
         throw new RejectedExecutionException(msg);
     }
 
+    /**
+     * 打印 JStack
+     */
     private void dumpJStack() {
         long now = System.currentTimeMillis();
 
@@ -91,11 +98,12 @@ public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
             return;
         }
 
-        // 获取信号量
+        // 获取信号量，目的是保证同一时间只有一个线程在进行日志的打印输出
         if (!guard.tryAcquire()) {
             return;
         }
 
+        // 创建线程池，后台执行打印 JStack
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
@@ -130,11 +138,13 @@ public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
                         try {
                             jstackStream.flush();
                             jstackStream.close();
-                        } catch (IOException e) {
+                        } catch (IOException ignored) {
+
                         }
                     }
                 }
 
+                // 记录最后打印时间
                 lastPrintTime = System.currentTimeMillis();
             }
         });

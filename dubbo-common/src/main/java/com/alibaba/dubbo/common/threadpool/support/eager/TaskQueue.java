@@ -42,6 +42,9 @@ public class TaskQueue<R extends Runnable> extends LinkedBlockingQueue<Runnable>
         executor = exec;
     }
 
+    /**
+     * 覆盖JDK默认的offer方法，融入了 EagerThreadPoolExecutor 的属性读取
+     */
     @Override
     public boolean offer(Runnable runnable) {
         if (executor == null) {
@@ -50,15 +53,31 @@ public class TaskQueue<R extends Runnable> extends LinkedBlockingQueue<Runnable>
 
         int currentPoolThreadSize = executor.getPoolSize();
         // have free worker. put task into queue to let the worker deal with task.
+        // 如果当前运行中的任务数比线程池中当前的线程总数还小，就不管了，每个任务一个线程，管够，直接走JDK的原来逻辑
         if (executor.getSubmittedTaskCount() < currentPoolThreadSize) {
             return super.offer(runnable);
         }
 
+        // 能走到这里，说明当前运行的任务数是大于线程池当前的线程数的；说明会有任务没有线程可用，需要处理这种情况
+
         // return false to let executor create new worker.
         if (currentPoolThreadSize < executor.getMaximumPoolSize()) {
+
+            //如果发现当前线程池的数量还没有到最大的maxPoolSize,返回false； 告知 ThreadPoolExecutor ，插入到任务队列失败。
+            //这一步，需要先配合EagerThreadPoolExecutor.execute 一块看，EagerThreadPoolExecutor和TaskQueue是深度配合的
+
+            //EagerThreadPoolExecutor.execute的主逻辑是super.execute(command); 那么又回到 ThreadPoolExecutor.execute的调度逻辑
+            //结合上面ThreadPoolExecutor.execute的调度逻辑，我们想一想什么时候，会调用Queue的offer方法
+
+
+            //是的，当EagerThreadPoolExecutor.execute执行的时候，发现corePoolSize已经满了，会先把任务offer添加到任务队列里，如果任务队列满了，拒绝添加，那么线程池，会马上开始尝试创建新的线程。
+
+
+            //这里直接返回false，就是强制线程池立刻马上创建线程。
             return false;
         }
 
+        // 能走到这里，说明当前的线程数，已经到到了maxPoolSize了，这时候也没有什么花招了，只能调用原始的offer逻辑，真的向任务队列插入。
         // currentPoolThreadSize >= max
         return super.offer(runnable);
     }

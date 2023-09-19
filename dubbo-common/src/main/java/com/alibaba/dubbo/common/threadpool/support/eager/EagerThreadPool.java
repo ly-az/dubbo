@@ -30,6 +30,24 @@ import java.util.concurrent.TimeUnit;
  * EagerThreadPool
  * When the core threads are all in busy,
  * create new thread instead of putting task into blocking queue.
+ * <p>
+ * JDK 线程池的默认策略是，越小的线程开销越好，所以会优先使用队列，而不是创建新的线程。
+ * <p>
+ * 在 RPC 通信框架的场景下，JDK 线程池这样的策略是不满足的
+ * 示例：
+ * 假设RPC的业务处理线程池里corePoolSize是10，maxPoolSize是40，任务队列长度是100
+ * 那么此时如果突然有30个RPC请求过来，而且这30个RPC业务比较耗时，此时只有10个RPC请求在响应并执行，剩下的20个RPC请求还在任务队列里
+ * 因为任务队列是100，还没有满，所以不会创建出额外的线程来处理。
+ * 需要积压了100个RPC请求，才会开始创建新的线程，来处理这些RPC业务，这是不可接受的。
+ * <p>
+ * 那有没有一种线程池，可以实现如下功能，在corePoolSize是10，maxPoolSize是40，任务队列长度是100时：
+ * 1. 如果有20个请求过来，corePoolSize的10个线程不够的时候，立刻再创建出10个线程来，立刻处理这20个请求。
+ * 2. 当同时有50个请求过来，创建的线程已经超过maxPoolSize的40的时候，再把处理不了的10个放在任务队列里。
+ * 3. 当请求变少的时候，maxPoolSize创建出来的那30个额外线程再释放掉，释放资源。
+ * <p>
+ *     EagerThreadPool 结合自己实现的 TaskQueue 和 EagerThreadPoolExecutor 就实现了上述的功能
+ *
+ *
  */
 public class EagerThreadPool implements ThreadPool {
 

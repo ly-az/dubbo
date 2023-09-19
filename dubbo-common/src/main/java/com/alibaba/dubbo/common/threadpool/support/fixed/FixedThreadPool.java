@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @see java.util.concurrent.Executors#newFixedThreadPool(int)
  *
- * 实现 ThreadPool 接口，固定大小线程池，启动时建立线程，不关闭，一直持有
+ * 实现 ThreadPool 接口，固定大小线程池，启动时建立线程，不关闭，一直持有，是默认的线程池
  *
  */
 public class FixedThreadPool implements ThreadPool {
@@ -55,6 +55,7 @@ public class FixedThreadPool implements ThreadPool {
                 queues == 0 ? new SynchronousQueue<Runnable>() :
                         (queues < 0 ? new LinkedBlockingQueue<Runnable>()
                                 : new LinkedBlockingQueue<Runnable>(queues)),
+                // 线程名和拒绝策略
                 new NamedInternalThreadFactory(name, true), new AbortPolicyWithReport(name, url));
         /*
         获得线程名、线程数、队列数。目前只有服务提供者使用
