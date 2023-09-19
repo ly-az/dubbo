@@ -453,6 +453,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     /**
+     * 基于单个协议暴露服务
      * 暴露 Dubbo URL 对象实际所调用的方法
      * @param protocolConfig 协议配置
      * @param registryURLs URL对象数据
@@ -496,14 +497,14 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 if (arguments != null && !arguments.isEmpty()) {
                     for (ArgumentConfig argument : arguments) {
                         // convert argument type
-                        if (argument.getType() != null && argument.getType().length() > 0) {
+                        if (argument.getType() != null && argument.getType().length() > 0) { // 指定类型
                             Method[] methods = interfaceClass.getMethods();
                             // visit all methods
                             if (methods != null && methods.length > 0) {
                                 for (int i = 0; i < methods.length; i++) {
                                     String methodName = methods[i].getName();
                                     // target the method, and get its signature
-                                    if (methodName.equals(method.getName())) {
+                                    if (methodName.equals(method.getName())) { // 找到指定方法
                                         Class<?>[] argtypes = methods[i].getParameterTypes();
                                         // one callback in the method
                                         if (argument.getIndex() != -1) {

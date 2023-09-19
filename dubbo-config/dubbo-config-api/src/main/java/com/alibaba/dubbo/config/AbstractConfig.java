@@ -312,7 +312,7 @@ public abstract class AbstractConfig implements Serializable {
                     //通过反射调用 getParameters() 方法
                     Map<String, String> map = (Map<String, String>) method.invoke(config, new Object[0]);
                     if (map != null && map.size() > 0) {
-                        String pre = (prefix != null && prefix.length() > 0 ? prefix + "." : "");
+                        String pre = (prefix != null && prefix.length() > 0 ? prefix + "." : ""); // `#getParameters()` 方法
                         for (Map.Entry<String, String> entry : map.entrySet()) {
                             // 将 map 添加到 parameters ，kv 格式为 prefix:entry.key entry.value
                             parameters.put(pre + entry.getKey().replace('-', '.'), entry.getValue());
@@ -353,8 +353,7 @@ public abstract class AbstractConfig implements Serializable {
                     if (parameter == null || !parameter.attribute())
                         continue;
                     String key;
-                    parameter.key();
-                    if (parameter.key().length() > 0) {
+                    if (!parameter.key().isEmpty()) {
                         key = parameter.key();
                     } else {
                         int i = name.startsWith("get") ? 3 : 2;

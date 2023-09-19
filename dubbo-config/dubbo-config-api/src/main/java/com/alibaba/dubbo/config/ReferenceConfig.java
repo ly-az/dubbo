@@ -217,7 +217,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         initialized = true;
         // 校验接口名非空
-        if (interfaceName == null || interfaceName.length() == 0) {
+        if (interfaceName == null || interfaceName.isEmpty()) {
             throw new IllegalStateException("<dubbo:reference interface=\"\" /> interface not allow null!");
         }
         //拼接属性配置（环境变量 + properties 属性）并设置到 ConsumerConfig 对象
