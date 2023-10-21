@@ -17,11 +17,7 @@
 
 package com.alibaba.dubbo.common.extension;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Marker for extension interface
@@ -58,7 +54,7 @@ public @interface SPI {
 
     /**
      * default extension name
-     * 默认拓展实现类的名称
+     * 默认拓展实现类的名称 test commit
      */
     String value() default "";
 
