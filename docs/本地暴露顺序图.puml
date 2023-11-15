@@ -1,0 +1,85 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+title
+    本地暴露顺序图
+end title
+
+autonumber
+
+activate ServiceConfig
+
+ServiceConfig -> ServiceConfig: doExportUrls():void
+
+ServiceConfig -> ServiceConfig: registryURLs = loadRegistries(provider:boolean):List<URL>
+
+ServiceConfig -> ServiceConfig: doExportUrlsFor1Protocol(protocolConfig:ProtocolConfig, registryURLs:List<URL>):void
+
+ServiceConfig -> ServiceConfig: exportLocal(url:URL):void
+
+note left:本地暴露顺序图
+
+activate "ProxyFactory$Adaptive"
+
+ServiceConfig -> "ProxyFactory$Adaptive": invoker = getInvoker(proxy:ProxyFactory, ref:T, type:Class<T>, url:URL):Invoker<T>
+
+note left:获取Invoker
+
+entity ProxyFactory
+
+"ProxyFactory$Adaptive" -> ProxyFactory: protocol = extensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension()
+box "实际是根据 URL 获取对应的 ProxyFactory 拓展实现类"
+participant "ProxyFactory$Adaptive"
+participant ProxyFactory
+end box
+
+activate ProxyFactory
+
+ServiceConfig -> "Protocol$Adaptive": export(invoker:Invoker<T>):Exporter<T>
+
+note left:获取Exporter
+
+box "实际上是根据 URL 获取的 Protocol 拓展实现类" #Pink
+    participant "Protocol$Adaptive"
+    participant ProtocolFilterWrapper
+    participant ProtocolListenerWrapper
+    participant InjvmProtocol
+end box
+
+activate "Protocol$Adaptive"
+
+"Protocol$Adaptive" -> ProtocolFilterWrapper: exporter = getProtocol(url:URL).export(invoker:Invoker<T>)
+
+activate ProtocolFilterWrapper
+
+ProtocolFilterWrapper -> ProtocolFilterWrapper:invoker = buildInvokerChain(invoker:Invoker<T>, key:String, group:String):void
+
+note left: Filter 链
+
+ProtocolFilterWrapper -> ProtocolListenerWrapper: export(invoker:Invoker<T>):Exporter<T>
+
+activate ProtocolListenerWrapper
+
+ProtocolListenerWrapper -> InjvmProtocol: export(invoker:Invoker<T>):Exporter<T>
+
+activate InjvmProtocol
+
+InjvmProtocol -> InjvmExporter:  创建 InjvmExporter()
+
+activate InjvmExporter
+
+ProtocolListenerWrapper -> ListenerExporterWrapper: 创建 ListenerExporterWrapper()
+
+note left: ExporterListener 数组
+
+activate ListenerExporterWrapper
+
+entity ExporterListener
+
+ListenerExporterWrapper -> ExporterListener:exported(exporter:Exporter<?>):void
+activate ExporterListener
+
+ServiceConfig -> ServiceConfig: 远程暴露
+activate ServiceConfig
+
+@enduml
