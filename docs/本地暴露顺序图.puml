@@ -46,9 +46,11 @@ box "实际上是根据 URL 获取的 Protocol 拓展实现类" #Pink
     participant InjvmProtocol
 end box
 
-activate "Protocol$Adaptive"
+
 
 "Protocol$Adaptive" -> ProtocolFilterWrapper: exporter = getProtocol(url:URL).export(invoker:Invoker<T>)
+
+activate "Protocol$Adaptive"
 
 activate ProtocolFilterWrapper
 
